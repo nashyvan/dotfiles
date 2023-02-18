@@ -33,10 +33,14 @@ return packer.startup(function(use)
 
 	use("nvim-lua/plenary.nvim") -- lua functions that many plugins use
 
+	use("rktjmp/lush.nvim")
+
 	-- use("bluz71/vim-nightfly-guicolors") -- preferred colorscheme
 	-- use("joshdick/onedark.vim")
 	-- use("sainnhe/everforest")
-	use("rebelot/kanagawa.nvim")
+	-- use("rebelot/kanagawa.nvim")
+	-- use("doums/darcula")
+	use({ "briones-gabriel/darcula-solid.nvim", requires = "rktjmp/lush.nvim" })
 
 	use("christoomey/vim-tmux-navigator") -- tmux & split window navigation
 
@@ -57,6 +61,7 @@ return packer.startup(function(use)
 
 	-- statusline
 	use("nvim-lualine/lualine.nvim")
+	-- use("itchyny/lightline.vim")
 
 	-- fuzzy finding w/ telescope
 	use({ "nvim-telescope/telescope-fzf-native.nvim", run = "make" }) -- dependency for better sorting performance
@@ -79,7 +84,14 @@ return packer.startup(function(use)
 	-- configuring lsp servers
 	use("neovim/nvim-lspconfig") -- easily configure language servers
 	use("hrsh7th/cmp-nvim-lsp") -- for autocompletion
-	use({ "glepnir/lspsaga.nvim", branch = "main" }) -- enhanced lsp uis
+	use({
+		"glepnir/lspsaga.nvim",
+		branch = "main",
+		requires = {
+			{ "nvim-tree/nvim-web-devicons" },
+			{ "nvim-treesitter/nvim-treesitter" },
+		},
+	}) -- enhanced lsp uis
 	use("jose-elias-alvarez/typescript.nvim") -- additional functionality for typescript server (e.g. rename file & update imports)
 	use("onsails/lspkind.nvim") -- vs-code like icons for autocompletion
 
