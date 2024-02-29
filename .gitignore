@@ -1,3 +1,8 @@
+!/nvim/
+/nvim/*
+!/nvim/lua/
+/nvim/lua/*
+!/nvim/lua/custom/
 /filezilla
 /git
 /neofetch
@@ -6,5 +11,7 @@
 /raycast
 /sanity
 /tmux/plugins
-
-Brewfile
+/yarn
+/stripe
+/gh
+/medusa

@@ -1,16 +1,21 @@
-require("nashivan.plugins-setup")
-require("nashivan.core.options")
-require("nashivan.core.keymaps")
-require("nashivan.core.colorscheme")
-require("nashivan.plugins.comment")
-require("nashivan.plugins.nvim-tree")
-require("nashivan.plugins.lualine")
-require("nashivan.plugins.telescope")
-require("nashivan.plugins.nvim-cmp")
-require("nashivan.plugins.lsp.mason")
-require("nashivan.plugins.lsp.lspsaga")
-require("nashivan.plugins.lsp.lspconfig")
-require("nashivan.plugins.lsp.null-ls")
-require("nashivan.plugins.autopairs")
-require("nashivan.plugins.treesitter")
-require("nashivan.plugins.gitsigns")
+require "core"
+
+local custom_init_path = vim.api.nvim_get_runtime_file("lua/custom/init.lua", false)[1]
+
+if custom_init_path then
+  dofile(custom_init_path)
+end
+
+require("core.utils").load_mappings()
+
+local lazypath = vim.fn.stdpath "data" .. "/lazy/lazy.nvim"
+
+-- bootstrap lazy.nvim!
+if not vim.loop.fs_stat(lazypath) then
+  require("core.bootstrap").gen_chadrc_template()
+  require("core.bootstrap").lazy(lazypath)
+end
+
+dofile(vim.g.base46_cache .. "defaults")
+vim.opt.rtp:prepend(lazypath)
+require "plugins"

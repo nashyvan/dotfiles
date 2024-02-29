@@ -8,8 +8,8 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)
 export ZSH_COMPDUMP=$ZSH/cache/.zcompdump-$HOST
 source $ZSH/oh-my-zsh.sh
 
-# ssh kitty fix
-alias ssh="kitty +kitten ssh"
+# SSH kitty fix
+alias s="kitty +kitten ssh"
 
 # Neovim
 alias n='nvim'

@@ -1,5 +1,10 @@
 # dotfiles
 
+```bash
+ln -s "$HOME/.config/.zshrc" "$HOME/.zshrc"
+brew bundle dump --file=~/.config/Brewfile --force
+```
+
 ## homebrew
 
 ```bash
@@ -54,6 +59,16 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)
 ```
 
 `source ~/.zshrc` to reload zsh config
+
+
+## NvChad
+
+```bash
+rm -rf ~/.local/share/nvim
+rm -rf ~/.cache/nvim
+rm -rf ~/.config/nvim
+git clone https://github.com/NvChad/NvChad ~/.config/nvim --depth 1 && nvim
+```
 
 ## nvim
 
