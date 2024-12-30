@@ -1,0 +1,49 @@
+source_directories:
+    - ~/Developer/Espalada
+    - ~/Developer/42workbase
+    - ~/.config
+    - ~/.ssh
+
+repositories:
+    - path: ${BORG_REPO}
+      label: "MacBook on BorgBase"
+
+exclude_patterns:
+    - '*.pyc'
+    - ~/*/.cache
+    - '.DS_Store'
+
+# Stay in same file system (optional)
+# one_file_system: true
+
+compression: auto,zstd
+encryption_passphrase: ${BORG_PASSPHRASE}
+archive_name_format: '{hostname}-{now:%Y-%m-%d-%H%M%S}'
+
+# Number of times to retry a failing backup before giving up.
+retries: 5
+retry_wait: 5
+
+keep_daily: 3
+keep_weekly: 4
+keep_monthly: 12
+
+#checks:
+    #- name: disabled
+    # Uncomment to regularly read all repo data
+    # - name: repository
+    #   frequency: 4 weeks
+    # - name: archives
+    #   frequency: 8 weeks
+
+skip_actions:
+    - check
+
+check_last: 3
+
+# Shell commands to execute before or after a backup
+before_backup:
+    - echo "`date` - Starting backup"
+
+after_backup:
+    - echo "`date` - Finished backup"

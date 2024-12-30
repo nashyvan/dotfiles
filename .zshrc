@@ -1,12 +1,20 @@
-# Path to your oh-my-zsh installation.
-export ZSH=$HOME/.oh-my-zsh
+# To setup run:
+# ln -s ~/.config/.zshrc ~/.zshrc
+# source ~/.config/.zshrc
 
-#ZSH_THEME="spaceship"
-ZSH_THEME=""
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)
+# Initialize completion system
+autoload -Uz compinit && compinit
+
+# zsh-autosuggestions
+# git clone https://github.com/zsh-users/zsh-autosuggestions ~/.config/zsh/plugins/zsh-autosuggestions
+source ~/.config/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# zsh-syntax-highlighting
+# git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.config/zsh/plugins/zsh-syntax-highlighting
+source ~/.config/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 export ZSH_COMPDUMP=$ZSH/cache/.zcompdump-$HOST
-source $ZSH/oh-my-zsh.sh
+#source $ZSH/oh-my-zsh.sh
 
 # SSH kitty fix
 alias s="kitty +kitten ssh"
@@ -43,8 +51,8 @@ alias gdd='git diff --color --name-only --diff-filter=D'
 
 
 # ls
-alias l="exa -lah --git"
-alias lt="exa -lahT --git"
+alias l="eza -lah --git"
+alias lt="eza -lahT --git"
 
 
 # cd
@@ -68,7 +76,8 @@ alias nu="(cd $NOTES_DIR && git add . && git commit -m 'update notes')"
 export EDITOR=nvim
 export PATH="/usr/local/sbin:$PATH"
 
+export $(cat ~/.config/borgmatic/.env | xargs)
 
-autoload -U promptinit; promptinit
+fpath+=/opt/homebrew/share/zsh/site-functions
+autoload -U promptinit && promptinit
 prompt pure
-
