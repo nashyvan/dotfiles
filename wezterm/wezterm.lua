@@ -20,8 +20,7 @@ if wezterm.config_builder then
 end
 
 -- Settings
-config.default_prog = { "/bin/zsh" }
-config.term = "wezterm"
+-- config.default_prog = { fish_path, "-l" }
 
 config.color_scheme = "vscode-dark"
 config.colors = {

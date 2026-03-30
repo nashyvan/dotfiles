@@ -1,24 +1,39 @@
 # dotfiles
 
+Personal `~/.config` setup for shell, editor, terminal, and tmux.
+
+## Quick setup
+
 ```bash
-git clone --recurse-submodules https://github.com/nashyvan/dotfiles.git
-ln -s "$HOME/.config/.zshrc" "$HOME/.zshrc"
+git clone --recurse-submodules https://github.com/nashyvan/dotfiles.git ~/.config
+cd ~/.config
+git submodule update --init --recursive
+ln -sf "$HOME/.config/.zshrc" "$HOME/.zshrc"
 ```
+
+## Repository layout
+
+- `.zshrc` - main Zsh config
+- `nvim/` - Neovim config (git submodule: [`nashyvan/kickstart.nvim`](https://github.com/nashyvan/kickstart.nvim))
+- `tmux/` - tmux config and themes
+- `wezterm/` - WezTerm config and colorscheme
+- `borgmatic/` - Borgmatic backup config (`.env.example` template included)
+- `Brewfile` - Homebrew packages and apps
+
+> [!NOTE]
+> This repo tracks the main config files above. Other folders under `~/.config` may exist locally and are machine-specific.
 
 ## Fonts
 
 [JetBrains Mono](https://jetbrains.com/lp/mono/)  
-[Nerd Font](https://www.nerdfonts.com/)
+[Nerd Fonts](https://www.nerdfonts.com/)
 
 ## Homebrew
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew bundle --file="$HOME/.config/Brewfile"
 ```
-> [!TIP]
-> ```bash
-> brew bundle dump --file=~/.config/Brewfile --force
-> ```
 
 ## WezTerm
 
@@ -26,100 +41,65 @@ ln -s "$HOME/.config/.zshrc" "$HOME/.zshrc"
 brew install --cask wezterm
 ```
 
-## Pure
-
-[sindresorhus/pure](https://github.com/sindresorhus/pure)
-
-```bash
-brew install pure
-```
-
 ## Zsh
 
 ```bash
-brew install zsh
+brew install zsh pure eza
+mkdir -p ~/.config/zsh/plugins
+git clone https://github.com/zsh-users/zsh-autosuggestions ~/.config/zsh/plugins/zsh-autosuggestions
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.config/zsh/plugins/zsh-syntax-highlighting
+source ~/.zshrc
 ```
-
-## eza
-
-```bash
-brew install eza
-```
-
-## Oh My Zsh
-
-```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-```
-
-### Zsh Plugins:
-
-```bash
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-```
-
-```bash
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-```
-
-Open the "~/.zshrc" file and add plugins:
-
-```
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)
-```
-
-`source ~/.zshrc` to reload zsh config
 
 ## Neovim
 
-- [Neovim](https://neovim.io/) (Version 0.8 or Later)
-- [Ripgrep](https://github.com/BurntSushi/ripgrep) - For Telescope Fuzzy Finder
+- Config lives in the `nvim` submodule
+- Read `nvim/README.md` for the full Kickstart docs
+- Main dependencies used here: `neovim`, `node`, `ripgrep`, `tree-sitter` (CLI)
+- Local customizations live in `nvim/lua/custom/*`
 
 ```bash
-brew install neovim
+brew install neovim node ripgrep tree-sitter
 ```
+
+Check CLI availability:
 
 ```bash
-brew install node
+tree-sitter --version
 ```
+
+### Check upstream kickstart.nvim updates
 
 ```bash
-brew install ripgrep
+cd ~/.config/nvim
+git fetch upstream && git log --oneline HEAD..upstream/master
 ```
 
-## kickstart.nvim
+### Update kickstart.nvim (future)
 
-[nvim-lua/kickstart.nvim](https://github.com/nvim-lua/kickstart.nvim) - Official Repository  
-[nashyvan/kickstart.nvim](https://github.com/nashyvan/kickstart.nvim) - My Fork
-
-### Plugins
-```vim
-  require 'custom.plugins.ui.devicons', -- Icons for nvim-tree and bufferline
-  require 'custom.plugins.ui.nvim-tree', -- A file explorer tree
-  require 'custom.plugins.ui.bufferline', -- Buffer line with tabpage integration
-  require 'custom.plugins.ui.lualine', -- Statusline
-  require 'custom.plugins.ui.barbecue', -- Winbar
-  require 'custom.plugins.ui.alpha', -- Start page
-  require 'custom.plugins.ui.colorizer', -- Highlight colors
-  require 'custom.plugins.ui.dressing', -- Plugin improves the default vim.ui interfaces
-  require 'custom.plugins.ui.fidget', -- Extensible UI for Neovim notifications and LSP progress messages
-  require 'custom.plugins.ui.illuminate', -- For automatically highlighting other uses of the word under the cursor using either LSP, Tree-sitter, or regex matching
-  require 'custom.plugins.ui.indent-blankline', -- This plugin adds indentation guides to Neovim
-  require 'custom.plugins.ui.nvim-bqf', -- Better quickfix window
-  require 'custom.plugins.ui.sunglasses', -- enhances Neovim's interface and color schemes for a better coding experience (Dims unactive window)
-  require 'custom.plugins.ui.transparent', -- Remove all background colors to make nvim transparent
-  require 'custom.plugins.ui.twilight', -- Dims inactive portions of the code you're editing using TreeSitter
-  require 'custom.plugins.ui.virt-column', -- Display a character as the colorcolumn
-  require 'custom.plugins.colorscheme.vscode',
+```bash
+git -C ~/.config/nvim remote add upstream https://github.com/nvim-lua/kickstart.nvim.git 2>/dev/null || true
+git -C ~/.config/nvim config core.hooksPath .githooks
+git -C ~/.config/nvim fetch upstream
+git -C ~/.config/nvim merge --no-ff upstream/master
+rm -f ~/.config/nvim/lazy-lock.json
+NVIM_APPNAME=nvim nvim --headless '+Lazy! sync' '+qa'
+NVIM_APPNAME=nvim nvim --headless '+checkhealth' '+qa'
+git -C ~/.config/nvim status --short
 ```
 
-> [!NOTE]
-> These commands reset Neovim by deleting its data, cache, and config.
-> ```bash
-> rm -rf ~/.local/share/nvim
-> rm -rf ~/.cache/nvim
-> rm -rf ~/.config/nvim
-> ```
+### Automatic `custom.plugins` import fix
+
+- `nvim/scripts/ensure-custom-import.sh` keeps `{ import = 'custom.plugins' }` in `nvim/init.lua`
+- `.githooks/post-merge` and `.githooks/post-checkout` run the script automatically
+- The script is idempotent (safe to run multiple times):
+
+```bash
+~/.config/nvim/scripts/ensure-custom-import.sh
+```
+
+- What is automatic: restoring/keeping the `custom.plugins` import line
+- What to check manually after update: merge conflicts (if any), then open Neovim and run `:Lazy sync` and `:checkhealth`
 
 ## tmux
 
@@ -127,12 +107,13 @@ brew install ripgrep
 git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
 ```
 
-`^a+I` to install packages  
-`^a+r` to reload tmux config
+- `prefix + I` to install tmux plugins (default prefix is `Ctrl-b`)
+- `prefix + r` to reload tmux config
 
 ## Borgmatic
 
 ```bash
 brew install borgmatic
-cp ~/.config/borgmatic/.env.example ~/.config/borgmatic/.env && vim ~/.config/borgmatic/.env
+cp ~/.config/borgmatic/.env.example ~/.config/borgmatic/.env
+$EDITOR ~/.config/borgmatic/.env
 ```

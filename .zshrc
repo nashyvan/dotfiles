@@ -72,6 +72,11 @@ export PATH="/usr/local/sbin:$PATH"
 # Load environment variables from .env file used by Borgmatic
 export $(cat ~/.config/borgmatic/.env | xargs)
 
+# OpenAI API Key
+#bw sync
+#export BW_SESSION=$(bw unlock --raw)
+#export OPENAI_API_KEY=$(bw get password "OpenAI API Key" --session $BW_SESSION)
+
 # Add Homebrew-managed zsh completions to function path
 fpath+=/opt/homebrew/share/zsh/site-functions
 
@@ -83,3 +88,4 @@ prompt pure
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # Load NVM
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # Load NVM bash completion
+export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
