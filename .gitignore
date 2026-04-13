@@ -2,10 +2,13 @@
 AGENTS.md
 /borg
 /borgmatic/.env
+/cagent
 /configstore
 /filezilla
+/gcloud
 /gh
 /git
+/github-copilot
 /medusa
 /neofetch
 /nnn
@@ -15,8 +18,10 @@ AGENTS.md
 /nvim/lua/*
 !/nvim/lua/custom/
 /nvim/plugin
+/pdfium-convert
 /raycast
 /sanity
 /stripe
 /tmux/plugins
 /yarn
+/zsh
