@@ -1,16 +1,30 @@
 # To setup run:
-# ln -s ~/.config/.zshrc ~/.zshrc
-# source ~/.config/.zshrc
+# ln -sf ~/.config/.zshrc ~/.zshrc
+
+# OS detection
+export OS_TYPE="$(uname -s)"
+
+# macOS: Homebrew paths and completions
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+  export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+  export PATH="/usr/local/sbin:$PATH"
+  fpath+=/opt/homebrew/share/zsh/site-functions
+fi
+
+# Linux: pure-prompt installed via npm; add to fpath
+if [[ "$OS_TYPE" == "Linux" ]]; then
+  NPM_PREFIX=$(npm prefix -g 2>/dev/null || true)
+  [[ -n "$NPM_PREFIX" ]] && fpath+=("$NPM_PREFIX/lib/node_modules/pure-prompt/functions")
+  export PATH="$HOME/.local/bin:$PATH"
+fi
 
 # Initialize completion system
 autoload -Uz compinit && compinit
 
 # zsh-autosuggestions
-# git clone https://github.com/zsh-users/zsh-autosuggestions ~/.config/zsh/plugins/zsh-autosuggestions
 source ~/.config/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 
 # zsh-syntax-highlighting
-# git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.config/zsh/plugins/zsh-syntax-highlighting
 source ~/.config/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Set custom path for Zsh completion dump file, using hostname to avoid conflicts across machines
@@ -66,19 +80,8 @@ alias nu="(cd $NOTES_DIR && git add . && git commit -m 'update notes')"
 # Set default editor to Neovim
 export EDITOR=nvim
 
-# Prepend /usr/local/sbin to the PATH
-export PATH="/usr/local/sbin:$PATH"
-
 # Load environment variables from .env file used by Borgmatic
-export $(cat ~/.config/borgmatic/.env | xargs)
-
-# OpenAI API Key
-#bw sync
-#export BW_SESSION=$(bw unlock --raw)
-#export OPENAI_API_KEY=$(bw get password "OpenAI API Key" --session $BW_SESSION)
-
-# Add Homebrew-managed zsh completions to function path
-fpath+=/opt/homebrew/share/zsh/site-functions
+[[ -f ~/.config/borgmatic/.env ]] && export $(cat ~/.config/borgmatic/.env | xargs)
 
 # Initialize and set the "pure" prompt
 autoload -U promptinit && promptinit
@@ -86,6 +89,5 @@ prompt pure
 
 # Set up Node Version Manager (NVM)
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # Load NVM
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # Load NVM bash completion
-export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
