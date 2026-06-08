@@ -182,6 +182,73 @@ $EDITOR ~/.config/borgmatic/.env   # fill in BORG_REPO and BORG_PASSPHRASE
 
 ---
 
+## Neovim — what to edit and what not to touch
+
+The `nvim/` directory is a separate git repo (submodule). It has two layers:
+
+| Path | Owner | Rule |
+|------|-------|------|
+| `nvim/lua/custom/` | **you** | edit freely — upstream never touches this directory |
+| `nvim/lua/custom/plugins/` | **you** | add/remove your own plugins here |
+| `nvim/init.lua` | upstream + you | upstream owns this file; your only addition is `require 'custom'` at the very bottom |
+| `nvim/lua/lazy-plugins.lua` | upstream + you | upstream owns this file; your only change is `{ import = 'custom.plugins' }` being uncommented |
+| `nvim/lua/kickstart/` | **upstream** | never edit — always accept upstream changes as-is |
+| `nvim/lua/options.lua` | **upstream** | never edit — put your overrides in `nvim/lua/custom/options.lua` |
+| `nvim/lua/keymaps.lua` | **upstream** | never edit — put your keymaps in `nvim/lua/custom/keymaps.lua` |
+
+### Your customization entry points
+
+- **Options** → `nvim/lua/custom/options.lua`
+- **Keymaps** → `nvim/lua/custom/keymaps.lua`
+- **Commands** → `nvim/lua/custom/commands.lua`
+- **Highlights** → `nvim/lua/custom/highlights.lua`
+- **Plugins** → add a new file under `nvim/lua/custom/plugins/` and require it in `nvim/lua/custom/plugins/init.lua`
+
+---
+
+## Updating nvim (kickstart-modular upstream)
+
+### First time — add the upstream remote
+
+```bash
+git -C ~/.config/nvim remote add upstream https://github.com/dam9000/kickstart-modular.nvim.git
+```
+
+Only needed once per machine. Skip if already done (`git -C ~/.config/nvim remote -v` to check).
+
+### Regular update flow
+
+```bash
+git -C ~/.config/nvim fetch upstream
+git -C ~/.config/nvim log --oneline HEAD..upstream/master   # preview what's incoming
+git -C ~/.config/nvim merge upstream/master
+```
+
+The merge will be conflict-free: git knows you *added* the two custom lines (they were never in upstream), so it keeps them automatically. No manual conflict resolution needed.
+
+After merging, sync plugins:
+
+```bash
+nvim --headless '+Lazy! sync' '+qa'
+nvim                   # open and run :checkhealth
+```
+
+### After the merge — push correctly
+
+The dotfiles repo stores a commit hash pointer to `nvim/`. **Push nvim first**, otherwise the pointer in dotfiles will reference a commit that doesn't exist on GitHub yet.
+
+```bash
+# 1. Push nvim submodule
+git -C ~/.config/nvim push origin master
+
+# 2. Then push dotfiles
+git -C ~/.config push origin main
+```
+
+If you accidentally push dotfiles first, GitHub shows a broken submodule link. Fix it by pushing nvim right after — the link resolves automatically once the commit exists.
+
+---
+
 ## Maintenance
 
 ### Update Homebrew packages (macOS)
@@ -190,17 +257,6 @@ $EDITOR ~/.config/borgmatic/.env   # fill in BORG_REPO and BORG_PASSPHRASE
 brew update && brew upgrade
 brew bundle dump --force --file=~/.config/os/macos/Brewfile
 ```
-
-### Update upstream nvim (kickstart-modular)
-
-```bash
-cd ~/.config/nvim
-git fetch upstream
-git log --oneline HEAD..upstream/master   # preview changes
-git merge upstream/master
-```
-
-Keep these two lines when merging — see [`nvim/UPSTREAM.md`](nvim/UPSTREAM.md) for details.
 
 ### Update tmux plugins
 
