@@ -190,8 +190,9 @@ The `nvim/` directory is a separate git repo (submodule). It has two layers:
 |------|-------|------|
 | `nvim/lua/custom/` | **you** | edit freely — upstream never touches this directory |
 | `nvim/lua/custom/plugins/` | **you** | add/remove your own plugins here |
-| `nvim/init.lua` | upstream + you | upstream owns this file; your only addition is `require 'custom'` at the very bottom |
-| `nvim/lua/lazy-plugins.lua` | upstream + you | upstream owns this file; your only change is `{ import = 'custom.plugins' }` being uncommented |
+| `nvim/init.lua` | upstream + you | upstream owns this file; your only addition is `require 'custom'` before `require 'pack'` |
+| `nvim/lua/plugins.lua` | upstream + you | upstream owns this file; your only change is `require 'custom.plugins'` being uncommented |
+| `nvim/lua/custom/plugins/init.lua` | **you** | explicit ordered require list — upstream's auto-loader doesn't recurse into subdirs |
 | `nvim/lua/kickstart/` | **upstream** | never edit — always accept upstream changes as-is |
 | `nvim/lua/options.lua` | **upstream** | never edit — put your overrides in `nvim/lua/custom/options.lua` |
 | `nvim/lua/keymaps.lua` | **upstream** | never edit — put your keymaps in `nvim/lua/custom/keymaps.lua` |
@@ -224,12 +225,12 @@ git -C ~/.config/nvim log --oneline HEAD..upstream/master   # preview what's inc
 git -C ~/.config/nvim merge upstream/master
 ```
 
-The merge will be conflict-free: git knows you *added* the two custom lines (they were never in upstream), so it keeps them automatically. No manual conflict resolution needed.
+Usually conflict-free for `lua/kickstart/` files. The three diverging files (`init.lua`, `plugins.lua`, `custom/plugins/init.lua`) may need manual fixups — see [`nvim/UPSTREAM.md`](nvim/UPSTREAM.md).
 
-After merging, sync plugins:
+After merging, update plugins and check health:
 
 ```bash
-nvim --headless '+Lazy! sync' '+qa'
+nvim --headless -c 'lua vim.pack.update()' -c 'qa'
 nvim                   # open and run :checkhealth
 ```
 
@@ -264,4 +265,6 @@ Inside tmux: `prefix + U`
 
 ### Update nvim plugins
 
-Inside Neovim: `:Lazy update`
+Inside Neovim: `:lua vim.pack.update()`
+
+Check pending updates without downloading: `:lua vim.pack.update(nil, { offline = true })`
