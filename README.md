@@ -34,6 +34,12 @@ working dirs, and captured pane contents) restore on the new Mac.
 > state. Restored panes reopen in the right folder; long-running programs (nvim, ssh, etc.)
 > relaunch, but unsaved in-memory state does not survive.
 
+WezTerm keeps its **own** window/tab/workspace layout via the
+[resurrect.wezterm](https://github.com/MLFlexer/resurrect.wezterm) plugin, saved to
+`~/.local/share/wezterm/resurrect/` (separate from the tmux dir above). Copy that directory
+too if you want WezTerm's layout to carry over. Inside WezTerm: **⌘S** saves, **⌘R** restores,
+and it also auto-restores on startup and auto-saves periodically.
+
 ### On the OLD Mac — export
 
 ```bash
@@ -48,8 +54,11 @@ cd ~/.config && git commit -am "chore: refresh Brewfile" && git push origin main
 # 3. Snapshot current tmux sessions right now (or press: prefix + Ctrl-s inside tmux)
 tmux run-shell ~/.config/tmux/plugins/tmux-resurrect/scripts/save.sh
 
-# 4. Copy the resurrect saves to the new Mac (adjust host/user), or AirDrop the folder
-rsync -av ~/.local/share/tmux/resurrect/ newmac.local:~/.local/share/tmux/resurrect/
+# 4. Snapshot WezTerm's window/tab layout — press ⌘S inside WezTerm ("💾 Session saved!")
+
+# 5. Copy both resurrect dirs to the new Mac (adjust host/user), or AirDrop the folders
+rsync -av ~/.local/share/tmux/resurrect/    newmac.local:~/.local/share/tmux/resurrect/
+rsync -av ~/.local/share/wezterm/resurrect/ newmac.local:~/.local/share/wezterm/resurrect/
 ```
 
 ### On the NEW Mac — import
@@ -64,11 +73,15 @@ git clone --recurse-submodules https://github.com/nashyvan/dotfiles.git ~/.confi
 # 3. Run the one-shot installer: Homebrew, Brewfile, zsh plugins, tmux tpm, shell, fonts
 ~/.config/os/macos/install.sh
 
-# 4. Make sure the tmux resurrect folder from the old Mac is in place
-#    (skip if you already rsync'd/AirDropped it above)
-ls ~/.local/share/tmux/resurrect/last   # should exist
+# 4. Make sure the resurrect folders from the old Mac are in place
+#    (skip if you already rsync'd/AirDropped them above)
+ls ~/.local/share/tmux/resurrect/last     # tmux — should exist
+ls ~/.local/share/wezterm/resurrect/      # wezterm — should list saved state
 
-# 5. Open WezTerm and start tmux — continuum auto-restores the last session.
+# 5. Open WezTerm — it auto-restores its window/tab layout on startup
+#    (or press ⌘R to pick a saved workspace/window/tab).
+
+# 6. Start tmux — continuum auto-restores the last session.
 #    If it doesn't restore automatically, press: prefix + Ctrl-r
 tmux
 ```
