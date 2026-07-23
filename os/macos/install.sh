@@ -60,6 +60,18 @@ fi
 ok "Homebrew on PATH for future shells"
 
 # 3. Brewfile — all formulae, casks, fonts -------------------------------------
+# Homebrew 6+ refuses formulae from untrusted third-party taps, so trust any
+# tap the Brewfile declares before bundling.
+if brew trust --help >/dev/null 2>&1; then
+  while IFS= read -r tap_name; do
+    [[ -z "$tap_name" ]] && continue
+    info "Trusting third-party tap $tap_name…"
+    brew tap "$tap_name" >/dev/null 2>&1 || true
+    brew trust "$tap_name" >/dev/null 2>&1 || true
+  done < <(grep -E '^[[:space:]]*tap[[:space:]]' "$CONFIG/os/macos/Brewfile" \
+             | sed -E 's/^[[:space:]]*tap[[:space:]]+"([^"]+)".*/\1/')
+fi
+
 info "Installing Homebrew packages from Brewfile…"
 brew bundle --file="$CONFIG/os/macos/Brewfile"
 ok "Brew packages installed"
