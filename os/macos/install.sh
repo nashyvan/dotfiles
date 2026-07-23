@@ -50,6 +50,15 @@ elif [[ -x /usr/local/bin/brew ]]; then
 fi
 ok "Homebrew ready ($(brew --version | head -1))"
 
+# Persist brew onto PATH for future login shells (.zshrc does NOT add it).
+# This is the "Next steps" line the Homebrew installer prints.
+ZPROFILE="$HOME/.zprofile"
+if ! grep -qsF "brew shellenv" "$ZPROFILE" 2>/dev/null; then
+  info "Adding Homebrew to ~/.zprofile for future shells…"
+  printf '\neval "$(%s/bin/brew shellenv)"\n' "$(brew --prefix)" >> "$ZPROFILE"
+fi
+ok "Homebrew on PATH for future shells"
+
 # 3. Brewfile — all formulae, casks, fonts -------------------------------------
 info "Installing Homebrew packages from Brewfile…"
 brew bundle --file="$CONFIG/os/macos/Brewfile"
