@@ -22,7 +22,66 @@ Supports **macOS** and **Debian/Ubuntu**.
 
 ---
 
+## Migrate to a new Mac
+
+Moves configs, all Homebrew packages, WezTerm, and **live tmux sessions** to a fresh machine.
+tmux sessions persist via [tmux-resurrect](https://github.com/tmux-plugins/tmux-resurrect) +
+[tmux-continuum](https://github.com/tmux-plugins/tmux-continuum), which save to
+`~/.local/share/tmux/resurrect/`. Copy that directory over and sessions (windows, panes,
+working dirs, and captured pane contents) restore on the new Mac.
+
+> tmux-resurrect stores each pane's **working directory and command**, not the live process
+> state. Restored panes reopen in the right folder; long-running programs (nvim, ssh, etc.)
+> relaunch, but unsaved in-memory state does not survive.
+
+### On the OLD Mac — export
+
+```bash
+# 1. Commit and push all config changes (nvim submodule first — see push order below)
+cd ~/.config/nvim && git push origin master
+cd ~/.config && git add -A && git commit -m "sync before migration" && git push origin main
+
+# 2. Refresh the Brewfile so it captures everything currently installed
+brew bundle dump --force --file=~/.config/os/macos/Brewfile
+cd ~/.config && git commit -am "chore: refresh Brewfile" && git push origin main
+
+# 3. Snapshot current tmux sessions right now (or press: prefix + Ctrl-s inside tmux)
+tmux run-shell ~/.config/tmux/plugins/tmux-resurrect/scripts/save.sh
+
+# 4. Copy the resurrect saves to the new Mac (adjust host/user), or AirDrop the folder
+rsync -av ~/.local/share/tmux/resurrect/ newmac.local:~/.local/share/tmux/resurrect/
+```
+
+### On the NEW Mac — import
+
+```bash
+# 1. Get git (triggers the Command Line Tools installer if missing)
+xcode-select --install
+
+# 2. Clone the repo (with the nvim submodule)
+git clone --recurse-submodules https://github.com/nashyvan/dotfiles.git ~/.config
+
+# 3. Run the one-shot installer: Homebrew, Brewfile, zsh plugins, tmux tpm, shell, fonts
+~/.config/os/macos/install.sh
+
+# 4. Make sure the tmux resurrect folder from the old Mac is in place
+#    (skip if you already rsync'd/AirDropped it above)
+ls ~/.local/share/tmux/resurrect/last   # should exist
+
+# 5. Open WezTerm and start tmux — continuum auto-restores the last session.
+#    If it doesn't restore automatically, press: prefix + Ctrl-r
+tmux
+```
+
+The [`os/macos/install.sh`](os/macos/install.sh) script is idempotent — safe to re-run if a
+step fails. The step-by-step manual equivalent is documented below.
+
+---
+
 ## macOS setup
+
+> For a new machine, prefer the scripted flow in [Migrate to a new Mac](#migrate-to-a-new-mac).
+> The steps below are the manual equivalent.
 
 ### 1. Clone
 

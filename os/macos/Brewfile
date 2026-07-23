@@ -1,4 +1,5 @@
 tap "borgbackup/tap"
+cask "font-jetbrains-mono-nerd-font"
 brew "node"
 brew "bitwarden-cli"
 brew "borgmatic"
