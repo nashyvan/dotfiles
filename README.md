@@ -35,10 +35,19 @@ working dirs, and captured pane contents) restore on the new Mac.
 > relaunch, but unsaved in-memory state does not survive.
 
 WezTerm keeps its **own** window/tab/workspace layout via the
-[resurrect.wezterm](https://github.com/MLFlexer/resurrect.wezterm) plugin, saved to
-`~/.local/share/wezterm/resurrect/` (separate from the tmux dir above). Copy that directory
-too if you want WezTerm's layout to carry over. Inside WezTerm: **⌘S** saves, **⌘R** restores,
-and it also auto-restores on startup and auto-saves periodically.
+[resurrect.wezterm](https://github.com/MLFlexer/resurrect.wezterm) plugin. Unlike most tools it
+saves **inside the plugin's own directory**, not under `~/.local/share`:
+`~/Library/Application Support/wezterm/plugins/httpss…MLFlexers…resurrectswezterm/state/`.
+Copying the whole `~/Library/Application Support/wezterm/` folder carries the layout over *and*
+pins the plugin to the version that wrote the state. Inside WezTerm: **⌘S** saves, **⌘R**
+restores, and it also auto-restores on startup and auto-saves periodically.
+
+> **Transfer prerequisite (rsync/scp):** macOS ships with SSH **off**, so `rsync` to another Mac
+> fails with `Connection refused`. On the **destination** Mac, enable it first —
+> System Settings → General → Sharing → **Remote Login**, or run `sudo systemsetup -setremotelogin on`.
+> No SSH? Skip rsync entirely and **AirDrop** the folders instead (see the no-SSH note below).
+> Replace `macbook-pro.local` with the destination's real name (`scutil --get LocalHostName`) or
+> its IP (`ipconfig getifaddr en0`) — both Macs are often named `MacBook-Pro`, which collides.
 
 ### On the OLD Mac — export
 
@@ -56,9 +65,21 @@ tmux run-shell ~/.config/tmux/plugins/tmux-resurrect/scripts/save.sh
 
 # 4. Snapshot WezTerm's window/tab layout — press ⌘S inside WezTerm ("💾 Session saved!")
 
-# 5. Copy both resurrect dirs to the new Mac (adjust host/user), or AirDrop the folders
-rsync -av ~/.local/share/tmux/resurrect/    newmac.local:~/.local/share/tmux/resurrect/
-rsync -av ~/.local/share/wezterm/resurrect/ newmac.local:~/.local/share/wezterm/resurrect/
+# 5. Copy tmux sessions + WezTerm state to the new Mac (needs Remote Login on — see above)
+rsync -av ~/.local/share/tmux/resurrect/ \
+  macbook-pro.local:~/.local/share/tmux/resurrect/
+rsync -av ~/Library/Application\ Support/wezterm/ \
+  macbook-pro.local:"~/Library/Application\ Support/wezterm/"
+```
+
+#### No SSH? AirDrop instead
+
+```bash
+# On the OLD Mac, open both folders in Finder, select all, right-click → Share → AirDrop:
+open ~/.local/share/tmux/resurrect/
+open ~/Library/Application\ Support/wezterm/
+# On the NEW Mac the items arrive in ~/Downloads — move them into the same paths:
+#   ~/.local/share/tmux/resurrect/   and   ~/Library/Application Support/wezterm/
 ```
 
 ### On the NEW Mac — import
@@ -73,10 +94,10 @@ git clone --recurse-submodules https://github.com/nashyvan/dotfiles.git ~/.confi
 # 3. Run the one-shot installer: Homebrew, Brewfile, zsh plugins, tmux tpm, shell, fonts
 ~/.config/os/macos/install.sh
 
-# 4. Make sure the resurrect folders from the old Mac are in place
-#    (skip if you already rsync'd/AirDropped them above)
-ls ~/.local/share/tmux/resurrect/last     # tmux — should exist
-ls ~/.local/share/wezterm/resurrect/      # wezterm — should list saved state
+# 4. Make sure the resurrect state from the old Mac is in place
+#    (skip if you already rsync'd/AirDropped it above)
+ls ~/.local/share/tmux/resurrect/last                                   # tmux — should exist
+ls ~/Library/Application\ Support/wezterm/plugins/*resurrect*/state/     # wezterm — saved layouts
 
 # 5. Open WezTerm — it auto-restores its window/tab layout on startup
 #    (or press ⌘R to pick a saved workspace/window/tab).
