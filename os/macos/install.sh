@@ -73,8 +73,37 @@ if brew trust --help >/dev/null 2>&1; then
 fi
 
 info "Installing Homebrew packages from Brewfile…"
-brew bundle --file="$CONFIG/os/macos/Brewfile"
-ok "Brew packages installed"
+# Don't let one flaky formula/cask (e.g. the wezterm@nightly cask, which
+# periodically breaks upstream) abort the whole setup.
+if brew bundle --file="$CONFIG/os/macos/Brewfile"; then
+  ok "Brew packages installed"
+else
+  warn "Some brew packages failed to install (see above) — continuing setup"
+fi
+
+# 3b. WezTerm fallback — the wezterm@nightly cask breaks intermittently upstream.
+# If the app isn't present, install the current nightly straight from GitHub.
+if [[ ! -d /Applications/WezTerm.app ]]; then
+  info "WezTerm not installed by brew — fetching the nightly build directly…"
+  WT_TMP="$(mktemp -d)"
+  WT_URL="https://github.com/wezterm/wezterm/releases/download/nightly/WezTerm-macos-nightly.zip"
+  if curl -fL -o "$WT_TMP/wezterm.zip" "$WT_URL" && unzip -oq "$WT_TMP/wezterm.zip" -d "$WT_TMP"; then
+    WT_APP="$(find "$WT_TMP" -maxdepth 2 -name WezTerm.app -type d | head -1)"
+    if [[ -n "$WT_APP" ]]; then
+      rm -rf /Applications/WezTerm.app
+      mv "$WT_APP" /Applications/
+      xattr -dr com.apple.quarantine /Applications/WezTerm.app 2>/dev/null || true
+      ok "WezTerm installed to /Applications (direct nightly download)"
+    else
+      warn "Could not find WezTerm.app in the download — install WezTerm manually"
+    fi
+  else
+    warn "WezTerm nightly download failed — install WezTerm manually"
+  fi
+  rm -rf "$WT_TMP"
+else
+  ok "WezTerm present"
+fi
 
 # 4. Zsh plugins ---------------------------------------------------------------
 info "Setting up zsh plugins…"
