@@ -141,7 +141,7 @@ if [[ -x "$BREW_ZSH" ]]; then
     echo "$BREW_ZSH" | sudo tee -a /etc/shells >/dev/null
   fi
   if [[ "$SHELL" != "$BREW_ZSH" ]]; then
-    info "Setting default shell to $BREW_ZSH…"
+    info "Setting default shell to ${BREW_ZSH}…"
     chsh -s "$BREW_ZSH" || warn "chsh failed — run 'chsh -s $BREW_ZSH' manually"
   fi
 fi
