@@ -24,88 +24,59 @@ Supports **macOS** and **Debian/Ubuntu**.
 
 ## Migrate to a new Mac
 
-Moves configs, all Homebrew packages, WezTerm, and **live tmux sessions** to a fresh machine.
-tmux sessions persist via [tmux-resurrect](https://github.com/tmux-plugins/tmux-resurrect) +
-[tmux-continuum](https://github.com/tmux-plugins/tmux-continuum), which save to
-`~/.local/share/tmux/resurrect/`. Copy that directory over and sessions (windows, panes,
-working dirs, and captured pane contents) restore on the new Mac.
+Two scripts do the work:
 
-> tmux-resurrect stores each pane's **working directory and command**, not the live process
-> state. Restored panes reopen in the right folder; long-running programs (nvim, ssh, etc.)
-> relaunch, but unsaved in-memory state does not survive.
+| Script | Runs on | Does |
+|--------|---------|------|
+| [`os/macos/sync-to-new-mac.sh`](os/macos/sync-to-new-mac.sh) | **OLD** Mac | rsyncs live state (below) to the new Mac |
+| [`os/macos/install.sh`](os/macos/install.sh) | **NEW** Mac | Homebrew + Brewfile, zsh plugins, tmux tpm, shell, WezTerm |
 
-WezTerm keeps its **own** window/tab/workspace layout via the
-[resurrect.wezterm](https://github.com/MLFlexer/resurrect.wezterm) plugin. Unlike most tools it
-saves **inside the plugin's own directory**, not under `~/.local/share`:
-`~/Library/Application Support/wezterm/plugins/httpss…MLFlexers…resurrectswezterm/state/`.
-Copying the whole `~/Library/Application Support/wezterm/` folder carries the layout over *and*
-pins the plugin to the version that wrote the state. Inside WezTerm: **⌘S** saves, **⌘R**
-restores, and it also auto-restores on startup and auto-saves periodically.
+Configs themselves (shell, nvim, tmux, wezterm) travel via **git** — the sync script only moves
+the live state git doesn't track:
 
-> **Transfer prerequisite (rsync/scp):** macOS ships with SSH **off**, so `rsync` to another Mac
-> fails with `Connection refused`. On the **destination** Mac, enable it first —
-> System Settings → General → Sharing → **Remote Login**, or run `sudo systemsetup -setremotelogin on`.
-> No SSH? Skip rsync entirely and **AirDrop** the folders instead (see the no-SSH note below).
-> Replace `macbook-pro.local` with the destination's real name (`scutil --get LocalHostName`) or
-> its IP (`ipconfig getifaddr en0`) — both Macs are often named `MacBook-Pro`, which collides.
+| Data | Path (same on both Macs) | Notes |
+|------|--------------------------|-------|
+| tmux sessions | `~/.local/share/tmux/resurrect/` | [resurrect](https://github.com/tmux-plugins/tmux-resurrect) + [continuum](https://github.com/tmux-plugins/tmux-continuum); auto-restores on new Mac |
+| WezTerm layout | `~/Library/Application Support/wezterm/` | [resurrect.wezterm](https://github.com/MLFlexer/resurrect.wezterm) saves in the plugin's own `…/plugins/*resurrect*/state/` |
+| Claude Code history | `~/.claude/` + `~/.claude.json` | transcripts in `projects/`; **auth is in the Keychain → re-login** |
+| Codex history | `~/.codex/` | `sessions/` + config; caches/logs/plugins are excluded; `auth.json` is copied |
 
-### On the OLD Mac — export
+> tmux/WezTerm restore each pane's **working directory and command**, not live process state —
+> panes reopen in the right folder and relaunch programs, but unsaved in-memory state is lost.
+
+### Steps
+
+**1. NEW Mac — enable SSH** (off by default; rsync needs it):
+System Settings → General → Sharing → **Remote Login**, or `sudo systemsetup -setremotelogin on`.
+
+**2. OLD Mac — push configs, then run the sync script:**
 
 ```bash
-# 1. Commit and push all config changes (nvim submodule first — see push order below)
-cd ~/.config/nvim && git push origin master
-cd ~/.config && git add -A && git commit -m "sync before migration" && git push origin main
-
-# 2. Refresh the Brewfile so it captures everything currently installed
-brew bundle dump --force --file=~/.config/os/macos/Brewfile
-cd ~/.config && git commit -am "chore: refresh Brewfile" && git push origin main
-
-# 3. Snapshot current tmux sessions right now (or press: prefix + Ctrl-s inside tmux)
-tmux run-shell ~/.config/tmux/plugins/tmux-resurrect/scripts/save.sh
-
-# 4. Snapshot WezTerm's window/tab layout — press ⌘S inside WezTerm ("💾 Session saved!")
-
-# 5. Copy tmux sessions + WezTerm state to the new Mac (needs Remote Login on — see above)
-rsync -av ~/.local/share/tmux/resurrect/ \
-  macbook-pro.local:~/.local/share/tmux/resurrect/
-rsync -av ~/Library/Application\ Support/wezterm/ \
-  macbook-pro.local:"~/Library/Application\ Support/wezterm/"
+cd ~/.config/nvim && git push origin master                 # push nvim submodule first
+brew bundle dump --force --file=~/.config/os/macos/Brewfile  # capture all installed packages
+cd ~/.config && git commit -am "sync before migration" && git push origin main
+./os/macos/sync-to-new-mac.sh nashyvan@macbook-pro.local     # prompts for host if omitted
 ```
 
-#### No SSH? AirDrop instead
+The script snapshots tmux, reuses one SSH connection for all transfers, and reminds you to quit
+Claude Code / the Codex app (live SQLite DBs) and press **⌘S** in WezTerm first. Use the target's
+real name (`scutil --get LocalHostName`) or IP (`ipconfig getifaddr en0`) — both Macs are often
+named `MacBook-Pro`, which collides.
+
+**3. NEW Mac — clone and install:**
 
 ```bash
-# On the OLD Mac, open both folders in Finder, select all, right-click → Share → AirDrop:
-open ~/.local/share/tmux/resurrect/
-open ~/Library/Application\ Support/wezterm/
-# On the NEW Mac the items arrive in ~/Downloads — move them into the same paths:
-#   ~/.local/share/tmux/resurrect/   and   ~/Library/Application Support/wezterm/
-```
-
-### On the NEW Mac — import
-
-```bash
-# 1. Get git (triggers the Command Line Tools installer if missing)
-xcode-select --install
-
-# 2. Clone the repo (with the nvim submodule)
+xcode-select --install                                                       # git
 git clone --recurse-submodules https://github.com/nashyvan/dotfiles.git ~/.config
-
-# 3. Run the one-shot installer: Homebrew, Brewfile, zsh plugins, tmux tpm, shell, fonts
 ~/.config/os/macos/install.sh
-
-# 4. Make sure the resurrect state from the old Mac is in place
-#    (skip if you already rsync'd/AirDropped it above)
-ls ~/.local/share/tmux/resurrect/last                                   # tmux — should exist
-ls ~/Library/Application\ Support/wezterm/plugins/*resurrect*/state/     # wezterm — saved layouts
-
-# 5. Open WezTerm — it auto-restores its window/tab layout on startup
-#    (or press ⌘R to pick a saved workspace/window/tab).
-
-# 6. Start tmux — continuum auto-restores the last session.
-#    If it doesn't restore automatically, press: prefix + Ctrl-r
-tmux
 ```
+
+Then: **WezTerm** opens and auto-restores its layout (or ⌘R to pick one); **`tmux`** auto-restores
+the last session (or `prefix + Ctrl-r`); **`claude`** → `/login` (Keychain auth); first **`nvim`**
+installs plugins.
+
+> **No SSH / prefer AirDrop?** Skip the sync script and AirDrop the four paths in the table above
+> (`open <path>` in Finder → Share → AirDrop); on the new Mac move each into the same location.
 
 The [`os/macos/install.sh`](os/macos/install.sh) script is idempotent — safe to re-run if a
 step fails. The step-by-step manual equivalent is documented below.
