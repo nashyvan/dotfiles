@@ -44,6 +44,7 @@ the live state git doesn't track:
 | Shell history | `~/.zsh_history` | |
 | CLI credentials | `~/.config/{gh,gcloud,filezilla,borgmatic/.env,stripe,sanity}`, `~/.docker/` | gcloud `virtenv/` + docker `bin/` skipped (regenerable) |
 | Dev projects | `~/Developer/` | `.git` + `.env` kept; `node_modules`, `.next`, `dist`, `build`, caches, venvs skipped — reinstall deps after |
+| PostgreSQL | `pg_dumpall` → `~/pg_all_dump.sql` | logical dump of all DBs + roles (Prisma shadow DBs skipped); restore on new Mac — see step 4 |
 
 > tmux/WezTerm restore each pane's **working directory and command**, not live process state —
 > panes reopen in the right folder and relaunch programs, but unsaved in-memory state is lost.
@@ -85,6 +86,16 @@ named `MacBook-Pro`, which collides.
 **4. NEW Mac — finish up:** **WezTerm** auto-restores its layout on open (or ⌘R to pick one);
 **`tmux`** auto-restores the last session (or `prefix + Ctrl-r`); **`claude`** → `/login`
 (Keychain auth); first **`nvim`** installs plugins.
+
+**Restore PostgreSQL** (server 18, matched by `install.sh`'s `postgres-app` cask): open
+**Postgres.app** once and click **Initialize** to create the server, then load the dump —
+
+```bash
+psql -d postgres -f ~/pg_all_dump.sql   # "role already exists" warnings are harmless
+```
+
+Reinstall project deps afterward (`npm/pnpm install`, `composer install`, recreate venvs). For a
+Prisma project, `prisma migrate dev` recreates the skipped shadow DBs automatically.
 
 > **No SSH / prefer AirDrop?** Skip the sync script and AirDrop the paths in the table above
 > (`open <path>` in Finder → Share → AirDrop); on the new Mac move each into the same location.

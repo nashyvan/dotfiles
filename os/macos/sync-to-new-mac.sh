@@ -37,8 +37,9 @@ cat <<EOF
 
 This copies live state to ${DEST}: tmux/WezTerm sessions, Claude Code + Codex
 history, SSH keys (~/.ssh), shell history, CLI credentials (gh, gcloud,
-FileZilla, borgmatic, stripe, sanity, docker), and ~/Developer projects (git
-history kept; node_modules/build/caches skipped). Secrets travel encrypted over SSH.
+FileZilla, borgmatic, stripe, sanity, docker), a PostgreSQL dump, and ~/Developer
+projects (git history kept; node_modules/build/caches skipped). Secrets travel
+encrypted over SSH.
 
 Before continuing, on THIS (old) Mac:
   • Run the new Mac's git clone + install.sh FIRST (this syncs into ~/.config)
@@ -158,7 +159,24 @@ ssh "${SSH_OPTS[@]}" "$DEST" 'mkdir -p ~/.local/share/tmux ~/.config ~/.docker' 
   run_rsync "Docker config" --exclude 'bin/' --exclude 'run/' --exclude 'desktop-build/' \
     "$HOME/.docker/" "$DEST:~/.docker/"
 
-# 7. Developer projects (largest transfer — done last) -------------------------
+# 7. PostgreSQL databases (logical dump — never rsync the data dir) ------------
+# Dumps every database + roles/globals from the running Postgres.app server,
+# skipping Prisma throwaway shadow DBs. Restore on the new Mac (see README).
+export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+if command -v pg_dumpall >/dev/null 2>&1 && pg_isready >/dev/null 2>&1; then
+  PG_DUMP="$HOME/pg_all_dump.sql"
+  info "Dumping PostgreSQL databases → ${PG_DUMP}…"
+  if pg_dumpall --exclude-database='prisma_migrate_shadow_db_*' -f "$PG_DUMP"; then
+    ok "Postgres dump written ($(du -h "$PG_DUMP" | cut -f1))"
+    run_rsync "Postgres dump" "$PG_DUMP" "$DEST:~/pg_all_dump.sql"
+  else
+    warn "pg_dumpall failed — skipping Postgres"
+  fi
+else
+  warn "No running PostgreSQL server detected — skipping database dump"
+fi
+
+# 8. Developer projects (largest transfer — done last) -------------------------
 # Copies ~/Developer with git history and uncommitted work intact, but skips
 # regenerable dependency/build dirs (node_modules, .next, caches, venvs, …).
 # .git and .env files ARE kept. rsync is incremental, so a re-run resumes.
