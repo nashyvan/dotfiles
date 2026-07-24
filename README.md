@@ -40,42 +40,52 @@ the live state git doesn't track:
 | WezTerm layout | `~/Library/Application Support/wezterm/` | [resurrect.wezterm](https://github.com/MLFlexer/resurrect.wezterm) saves in the plugin's own `…/plugins/*resurrect*/state/` |
 | Claude Code history | `~/.claude/` + `~/.claude.json` | transcripts in `projects/`; **auth is in the Keychain → re-login** |
 | Codex history | `~/.codex/` | `sessions/` + config; caches/logs/plugins are excluded; `auth.json` is copied |
+| SSH keys | `~/.ssh/` | keys, `config`, `known_hosts`; live `agent/` sockets skipped |
+| Shell history | `~/.zsh_history` | |
+| CLI credentials | `~/.config/{gh,gcloud,filezilla,borgmatic/.env,stripe,sanity}`, `~/.docker/` | gcloud `virtenv/` + docker `bin/` skipped (regenerable) |
 
 > tmux/WezTerm restore each pane's **working directory and command**, not live process state —
 > panes reopen in the right folder and relaunch programs, but unsaved in-memory state is lost.
+>
+> Keys and credentials travel **encrypted over SSH** and land with their original permissions.
+> Not covered (use Migration Assistant or re-auth): macOS Keychain, app preferences, browser data.
 
-### Steps
+### Steps — in this order
 
-**1. NEW Mac — enable SSH** (off by default; rsync needs it):
-System Settings → General → Sharing → **Remote Login**, or `sudo systemsetup -setremotelogin on`.
-
-**2. OLD Mac — push configs, then run the sync script:**
+**1. OLD Mac — push configs to GitHub:**
 
 ```bash
 cd ~/.config/nvim && git push origin master                 # push nvim submodule first
 brew bundle dump --force --file=~/.config/os/macos/Brewfile  # capture all installed packages
 cd ~/.config && git commit -am "sync before migration" && git push origin main
-./os/macos/sync-to-new-mac.sh nashyvan@macbook-pro.local     # prompts for host if omitted
 ```
 
-The script snapshots tmux, reuses one SSH connection for all transfers, and reminds you to quit
-Claude Code / the Codex app (live SQLite DBs) and press **⌘S** in WezTerm first. Use the target's
-real name (`scutil --get LocalHostName`) or IP (`ipconfig getifaddr en0`) — both Macs are often
-named `MacBook-Pro`, which collides.
-
-**3. NEW Mac — clone and install:**
+**2. NEW Mac — enable SSH, then clone and install:**
 
 ```bash
-xcode-select --install                                                       # git
+sudo systemsetup -setremotelogin on   # or System Settings → General → Sharing → Remote Login
+xcode-select --install                # git
 git clone --recurse-submodules https://github.com/nashyvan/dotfiles.git ~/.config
 ~/.config/os/macos/install.sh
 ```
 
-Then: **WezTerm** opens and auto-restores its layout (or ⌘R to pick one); **`tmux`** auto-restores
-the last session (or `prefix + Ctrl-r`); **`claude`** → `/login` (Keychain auth); first **`nvim`**
-installs plugins.
+**3. OLD Mac — sync live state across** (run *after* step 2 — the credential stores land inside
+`~/.config`, which must exist first; you can't clone into a non-empty dir):
 
-> **No SSH / prefer AirDrop?** Skip the sync script and AirDrop the four paths in the table above
+```bash
+./os/macos/sync-to-new-mac.sh nashyvan@macbook-pro.local     # prompts for host if omitted
+```
+
+The script snapshots tmux, reuses one SSH connection for every transfer, and reminds you to quit
+Claude Code / the Codex app (live SQLite DBs) and press **⌘S** in WezTerm first. Use the target's
+real name (`scutil --get LocalHostName`) or IP (`ipconfig getifaddr en0`) — both Macs are often
+named `MacBook-Pro`, which collides.
+
+**4. NEW Mac — finish up:** **WezTerm** auto-restores its layout on open (or ⌘R to pick one);
+**`tmux`** auto-restores the last session (or `prefix + Ctrl-r`); **`claude`** → `/login`
+(Keychain auth); first **`nvim`** installs plugins.
+
+> **No SSH / prefer AirDrop?** Skip the sync script and AirDrop the paths in the table above
 > (`open <path>` in Finder → Share → AirDrop); on the new Mac move each into the same location.
 
 The [`os/macos/install.sh`](os/macos/install.sh) script is idempotent — safe to re-run if a

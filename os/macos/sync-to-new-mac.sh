@@ -35,9 +35,14 @@ fi
 # 2. Pre-flight reminders ------------------------------------------------------
 cat <<EOF
 
+This copies live state to ${DEST}: tmux/WezTerm sessions, Claude Code + Codex
+history, SSH keys (~/.ssh), shell history, and CLI credentials (gh, gcloud,
+FileZilla, borgmatic, stripe, sanity, docker). Secrets travel encrypted over SSH.
+
 Before continuing, on THIS (old) Mac:
-  • Quit Claude Code and the Codex app  (they use live SQLite DBs — copying while
-    running can corrupt them)
+  • Run the new Mac's git clone + install.sh FIRST (this syncs into ~/.config)
+  • Quit Claude Code and the Codex app  (live SQLite DBs — copying while running
+    can corrupt them)
   • Press ⌘S in WezTerm to snapshot its current layout
 
 EOF
@@ -109,5 +114,48 @@ run_rsync() {
     --exclude '..codex-global-state.json.tmp-*' --exclude '.DS_Store' \
     "$HOME/.codex/" "$DEST:~/.codex/"
 
+# 6. Keys, credentials & CLI auth ----------------------------------------------
+# Sensitive, but travels encrypted over SSH and lands with the same perms.
+# The ~/.config/* stores below need the repo cloned on the new Mac first (so
+# ~/.config exists) — run this script AFTER the new Mac's git clone + install.sh.
+ssh "${SSH_OPTS[@]}" "$DEST" 'mkdir -p ~/.local/share/tmux ~/.config ~/.docker' 2>/dev/null || true
+
+# SSH keys, config, known_hosts (skip live agent sockets, which can't be copied)
+[[ -d "$HOME/.ssh" ]] && \
+  run_rsync "SSH keys" --exclude 'agent/' --exclude '.DS_Store' \
+    "$HOME/.ssh/" "$DEST:~/.ssh/"
+
+# Shell command history
+[[ -f "$HOME/.zsh_history" ]] && \
+  run_rsync "zsh history" "$HOME/.zsh_history" "$DEST:~/.zsh_history"
+
+# GitHub CLI auth (avoids 'gh auth login')
+[[ -d "$HOME/.config/gh" ]] && \
+  run_rsync "gh auth" "$HOME/.config/gh/" "$DEST:~/.config/gh/"
+
+# gcloud auth/config (skip the regenerable ~85M python virtualenv + logs)
+[[ -d "$HOME/.config/gcloud" ]] && \
+  run_rsync "gcloud" --exclude 'virtenv/' --exclude 'logs/' \
+    "$HOME/.config/gcloud/" "$DEST:~/.config/gcloud/"
+
+# FileZilla saved sites (may hold server credentials)
+[[ -d "$HOME/.config/filezilla" ]] && \
+  run_rsync "FileZilla sites" "$HOME/.config/filezilla/" "$DEST:~/.config/filezilla/"
+
+# Borgmatic backup secrets (BORG_REPO + BORG_PASSPHRASE)
+[[ -f "$HOME/.config/borgmatic/.env" ]] && \
+  run_rsync "borgmatic .env" "$HOME/.config/borgmatic/.env" "$DEST:~/.config/borgmatic/.env"
+
+# Stripe / Sanity CLI configs
+[[ -d "$HOME/.config/stripe" ]] && \
+  run_rsync "stripe CLI" "$HOME/.config/stripe/" "$DEST:~/.config/stripe/"
+[[ -d "$HOME/.config/sanity" ]] && \
+  run_rsync "sanity CLI" "$HOME/.config/sanity/" "$DEST:~/.config/sanity/"
+
+# Docker registry auth / contexts (skip the ~22M of CLI plugin binaries in bin/)
+[[ -d "$HOME/.docker" ]] && \
+  run_rsync "Docker config" --exclude 'bin/' --exclude 'run/' --exclude 'desktop-build/' \
+    "$HOME/.docker/" "$DEST:~/.docker/"
+
 echo
-ok "Done. On the NEW Mac: run os/macos/install.sh, then 'claude' + /login."
+ok "Done. On the NEW Mac: 'claude' + /login (Keychain auth); check gcloud/gh still authed."
