@@ -43,6 +43,7 @@ the live state git doesn't track:
 | SSH keys | `~/.ssh/` | keys, `config`, `known_hosts`; live `agent/` sockets skipped |
 | Shell history | `~/.zsh_history` | |
 | CLI credentials | `~/.config/{gh,gcloud,filezilla,borgmatic/.env,stripe,sanity}`, `~/.docker/` | gcloud `virtenv/` + docker `bin/` skipped (regenerable) |
+| Dev projects | `~/Developer/` | `.git` + `.env` kept; `node_modules`, `.next`, `dist`, `build`, caches, venvs skipped — reinstall deps after |
 
 > tmux/WezTerm restore each pane's **working directory and command**, not live process state —
 > panes reopen in the right folder and relaunch programs, but unsaved in-memory state is lost.

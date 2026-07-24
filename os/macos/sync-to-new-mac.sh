@@ -36,8 +36,9 @@ fi
 cat <<EOF
 
 This copies live state to ${DEST}: tmux/WezTerm sessions, Claude Code + Codex
-history, SSH keys (~/.ssh), shell history, and CLI credentials (gh, gcloud,
-FileZilla, borgmatic, stripe, sanity, docker). Secrets travel encrypted over SSH.
+history, SSH keys (~/.ssh), shell history, CLI credentials (gh, gcloud,
+FileZilla, borgmatic, stripe, sanity, docker), and ~/Developer projects (git
+history kept; node_modules/build/caches skipped). Secrets travel encrypted over SSH.
 
 Before continuing, on THIS (old) Mac:
   • Run the new Mac's git clone + install.sh FIRST (this syncs into ~/.config)
@@ -157,5 +158,25 @@ ssh "${SSH_OPTS[@]}" "$DEST" 'mkdir -p ~/.local/share/tmux ~/.config ~/.docker' 
   run_rsync "Docker config" --exclude 'bin/' --exclude 'run/' --exclude 'desktop-build/' \
     "$HOME/.docker/" "$DEST:~/.docker/"
 
+# 7. Developer projects (largest transfer — done last) -------------------------
+# Copies ~/Developer with git history and uncommitted work intact, but skips
+# regenerable dependency/build dirs (node_modules, .next, caches, venvs, …).
+# .git and .env files ARE kept. rsync is incremental, so a re-run resumes.
+DEV_EXCLUDES=(
+  --exclude 'node_modules' --exclude '.next' --exclude '.nuxt' --exclude '.svelte-kit'
+  --exclude '.turbo' --exclude '.cache' --exclude '.parcel-cache'
+  --exclude 'dist' --exclude 'build' --exclude 'out' --exclude 'coverage'
+  --exclude 'target' --exclude 'vendor'
+  --exclude '.venv' --exclude 'venv' --exclude '__pycache__'
+  --exclude '.pytest_cache' --exclude '.mypy_cache'
+  --exclude 'Pods' --exclude '.gradle' --exclude '.DS_Store'
+)
+if [[ -d "$HOME/Developer" ]]; then
+  info "Syncing ~/Developer (skipping deps/build dirs — this is the big one)…"
+  run_rsync "Developer projects" "${DEV_EXCLUDES[@]}" \
+    "$HOME/Developer/" "$DEST:~/Developer/"
+fi
+
 echo
 ok "Done. On the NEW Mac: 'claude' + /login (Keychain auth); check gcloud/gh still authed."
+echo "     In ~/Developer projects, reinstall deps (npm/pnpm install, composer install, …)."
