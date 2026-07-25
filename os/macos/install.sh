@@ -81,6 +81,14 @@ else
   warn "Some brew packages failed to install (see above) — continuing setup"
 fi
 
+# 3a. Claude Code CLI — installed via its own installer, not brew ---------------
+if ! command -v claude >/dev/null 2>&1; then
+  info "Installing Claude Code CLI…"
+  curl -fsSL https://claude.ai/install.sh | bash
+else
+  ok "Claude Code CLI present"
+fi
+
 # 3b. WezTerm fallback — the wezterm@nightly cask breaks intermittently upstream.
 # If the app isn't present, install the current nightly straight from GitHub.
 if [[ ! -d /Applications/WezTerm.app ]]; then
