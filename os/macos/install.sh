@@ -91,7 +91,31 @@ else
   ok "Claude Code CLI present"
 fi
 
-# 3b. WezTerm — the wezterm@nightly cask is not in the Brewfile because its
+# 3b. GitHub auth — SSH key first, gh CLI as fallback --------------------------
+# GitHub dropped username/password auth over HTTPS. Primary: load the personal
+# SSH key into the agent, backed by the macOS Keychain so it survives reboots
+# (the key itself comes from ~/.ssh via sync-to-new-mac.sh, not this repo).
+# gh is set up regardless — it's also how `gh pr create` / `gh issue` etc. auth.
+SSH_KEY="$HOME/.ssh/id_ed25519"
+if [[ -f "$SSH_KEY" ]] && ssh-add --apple-use-keychain "$SSH_KEY" 2>/dev/null; then
+  ok "SSH key loaded into agent (Keychain-backed)"
+elif [[ -f "$SSH_KEY" ]]; then
+  warn "SSH key found but couldn't be loaded — run manually: ssh-add --apple-use-keychain $SSH_KEY"
+else
+  warn "No SSH key at $SSH_KEY — copy it from your old Mac, or generate one, then re-run"
+fi
+
+if command -v gh >/dev/null 2>&1; then
+  if gh auth status >/dev/null 2>&1; then
+    ok "gh already authenticated"
+  else
+    info "Logging into GitHub via gh (opens a browser)…"
+    gh auth login -h github.com -w || warn "gh auth login failed — run it manually: gh auth login"
+  fi
+  gh auth setup-git || warn "gh auth setup-git failed — run it manually later"
+fi
+
+# 3c. WezTerm — the wezterm@nightly cask is not in the Brewfile because its
 # install step breaks upstream; fetch the current nightly straight from GitHub.
 if [[ ! -d /Applications/WezTerm.app ]]; then
   info "Fetching the WezTerm nightly build…"

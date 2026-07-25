@@ -29,7 +29,7 @@ Two scripts do the work:
 | Script | Runs on | Does |
 |--------|---------|------|
 | [`os/macos/sync-to-new-mac.sh`](os/macos/sync-to-new-mac.sh) | **OLD** Mac | rsyncs live state (below) to the new Mac |
-| [`os/macos/install.sh`](os/macos/install.sh) | **NEW** Mac | Homebrew + Brewfile, zsh plugins, tmux tpm, shell, WezTerm |
+| [`os/macos/install.sh`](os/macos/install.sh) | **NEW** Mac | Homebrew + Brewfile, zsh plugins, tmux tpm, shell, WezTerm, GitHub auth (SSH key + `gh`) |
 
 Configs themselves (shell, nvim, tmux, wezterm) travel via **git** — the sync script only moves
 the live state git doesn't track:
@@ -82,6 +82,11 @@ The script snapshots tmux, reuses one SSH connection for every transfer, and rem
 Claude Code / the Codex app (live SQLite DBs) and press **⌘S** in WezTerm first. Use the target's
 real name (`scutil --get LocalHostName`) or IP (`ipconfig getifaddr en0`) — both Macs are often
 named `MacBook-Pro`, which collides.
+
+`install.sh` (step 2) tries to load `~/.ssh/id_ed25519` into the agent for `git push`, but that key
+doesn't exist until *this* step copies it over — re-run `install.sh` afterward (or just
+`ssh-add --apple-use-keychain ~/.ssh/id_ed25519`) to pick it up. `gh` auth is the fallback if no SSH
+key is present.
 
 **4. NEW Mac — finish up:** **WezTerm** auto-restores its layout on open (or ⌘R to pick one);
 **`tmux`** auto-restores the last session (or `prefix + Ctrl-r`); **`claude`** → `/login`
