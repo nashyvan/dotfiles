@@ -138,7 +138,15 @@ excludes_for() {
 }
 
 RSYNC_FLAGS=(-rtD --no-perms --no-owner --no-group --modify-window=2 --human-readable)
-[[ -t 1 ]] && RSYNC_FLAGS+=(--info=progress2)
+if [[ -t 1 ]]; then
+  # macOS ships openrsync (BSD, protocol 29) by default, which lacks the
+  # GPL rsync 3.1+ --info=progress2 flag; probe for it instead of assuming.
+  if rsync --info=progress2 --version >/dev/null 2>&1; then
+    RSYNC_FLAGS+=(--info=progress2)
+  else
+    RSYNC_FLAGS+=(--progress)
+  fi
+fi
 
 # 4. Sync one folder ----------------------------------------------------------
 sync_folder() {
