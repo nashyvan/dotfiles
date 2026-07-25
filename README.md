@@ -105,6 +105,45 @@ step fails. The step-by-step manual equivalent is documented below.
 
 ---
 
+## Local backup to an external drive
+
+[`os/macos/backup-to-t9.sh`](os/macos/backup-to-t9.sh) mirrors key home-directory folders to a
+Samsung T9 SSD (exFAT) via rsync — an offline safety net independent of the new-Mac migration flow.
+
+| Folder | What's kept |
+|--------|-------------|
+| `Developer` | dev projects; deps/build/cache dirs skipped, `.git`/`.env*`/sources kept |
+| `.ssh` | keys, `config`, `known_hosts`; live agent socket skipped |
+| `.claude` (+ `.claude.json`) | Claude Code history/config; caches/telemetry/plugins skipped |
+| `.codex` | Codex history/config; caches/logs/plugins skipped |
+| `.config` | this dotfiles repo + gitignored local credentials (gcloud, gh, github-copilot, …); regenerable `gcloud/virtenv` and cloned zsh/tmux plugins skipped |
+| `.anydesk` | AnyDesk alias/address book/config; caches/thumbnails skipped |
+| `.borgmatic` | borg bootstrap manifest (disaster-recovery metadata) |
+| `.pgadmin` | pgAdmin4 saved server connections (`pgadmin4.db`); logs/sessions skipped |
+| `Downloads`, `Movies` | copied as-is (minus `.DS_Store`) |
+| `Music`, `Pictures` | copied as-is; `Photos Library.photoslibrary` / `Music Library.musiclibrary` / `Media.localized` skipped (app-managed bundles / Finder display-name metadata, not plain files) |
+
+Deliberately **not** backed up: `.cache`, `.zcompcache`, `.homebrew` (pure regenerable caches/locks),
+and `.zshrc` (a symlink into `.config`, already covered above).
+
+> **What's a `.localized` folder?** macOS translates the *displayed* name of any folder ending in
+> `.localized` using translation strings hidden inside it — e.g. `Media.localized` shows up in
+> Finder as just **"Media"**, with no `.localized` suffix visible. That's why `Music/Media.localized`
+> (skipped above) doesn't match what you see in Finder; `find`/`ls` show the real on-disk name.
+
+```bash
+./os/macos/backup-to-t9.sh                          # back up every folder above
+./os/macos/backup-to-t9.sh --only=Developer,.ssh     # only these folders (comma-sep)
+./os/macos/backup-to-t9.sh --delete                  # mirror: also remove files on the T9
+                                                      #   copy that are gone locally (scoped per folder)
+./os/macos/backup-to-t9.sh --dry-run                 # show what would change, copy nothing
+```
+
+Safe to re-run — see the script's header comment for the full safety-guard rundown (destination
+must resolve inside the T9 root, refuses to mirror-delete over an unmounted/empty source, etc.).
+
+---
+
 ## macOS setup
 
 > For a new machine, prefer the scripted flow in [Migrate to a new Mac](#migrate-to-a-new-mac).

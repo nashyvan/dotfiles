@@ -16,7 +16,13 @@
 #   .ssh        keys/config/known_hosts; live agent socket skipped
 #   .claude     Claude Code history/config; caches/telemetry/plugins skipped
 #   .codex      Codex history/config; caches/logs/plugins skipped
-#   Downloads, Movies, Music, Pictures   copied as-is (minus .DS_Store)
+#   .config     dotfiles repo + gitignored local credentials (gcloud, gh, etc.);
+#               regenerable gcloud/virtenv and zsh/tmux plugin clones skipped
+#   .anydesk    AnyDesk alias/address book/config; caches/thumbnails skipped
+#   .borgmatic  borg bootstrap manifest (disaster-recovery metadata)
+#   .pgadmin    pgAdmin4 saved server connections (pgadmin4.db); logs/sessions skipped
+#   Downloads, Movies   copied as-is (minus .DS_Store)
+#   Music, Pictures   copied as-is; Photos/Music Library bundles skipped (app-managed, huge)
 #
 # Default destination root: /Volumes/T9/MacBook
 #
@@ -76,7 +82,7 @@ for arg in "$@"; do
   esac
 done
 
-ALL_FOLDERS=(Developer .ssh .claude .codex Downloads Movies Music Pictures)
+ALL_FOLDERS=(Developer .ssh .claude .codex .config .anydesk .borgmatic .pgadmin Downloads Movies Music Pictures)
 if [[ -n "$ONLY" ]]; then
   IFS=',' read -r -a FOLDERS <<< "$ONLY"
 else
@@ -130,6 +136,25 @@ excludes_for() {
     .codex)
       printf '%s\n' plugins computer-use log cache 'logs_2.sqlite*' models_cache.json \
         .tmp tmp ipc process_manager '..codex-global-state.json.tmp-*' .DS_Store
+      ;;
+    .config)
+      # Regenerable: gcloud's bundled venv, and zsh/tmux plugins cloned from git.
+      printf '%s\n' gcloud/virtenv zsh/plugins tmux/plugins .DS_Store
+      ;;
+    .anydesk)
+      printf '%s\n' cache global_cache thumbnails '*.trace' .DS_Store
+      ;;
+    .pgadmin)
+      printf '%s\n' 'pgadmin4.log*' sessions azurecredentialcache .DS_Store
+      ;;
+    Pictures)
+      # Photos Library is huge and managed by Photos.app — not a plain file dump.
+      printf '%s\n' 'Photos Library.photoslibrary' .DS_Store
+      ;;
+    Music)
+      # Music Library is huge and managed by Music.app — not a plain file dump.
+      # Media.localized is just Finder display-name metadata (shows as "Media"), no audio in it.
+      printf '%s\n' 'Music/Music Library.musiclibrary' 'Music/Media.localized' .DS_Store
       ;;
     *)
       printf '%s\n' .DS_Store
