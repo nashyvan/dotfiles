@@ -124,12 +124,8 @@ Samsung T9 SSD (exFAT) via rsync — an offline safety net independent of the ne
 | `Music`, `Pictures` | copied as-is; `Photos Library.photoslibrary` / `Music Library.musiclibrary` / `Media.localized` skipped (app-managed bundles / Finder display-name metadata, not plain files) |
 
 Deliberately **not** backed up: `.cache`, `.zcompcache`, `.homebrew` (pure regenerable caches/locks),
-and `.zshrc` (a symlink into `.config`, already covered above).
-
-> **What's a `.localized` folder?** macOS translates the *displayed* name of any folder ending in
-> `.localized` using translation strings hidden inside it — e.g. `Media.localized` shows up in
-> Finder as just **"Media"**, with no `.localized` suffix visible. That's why `Music/Media.localized`
-> (skipped above) doesn't match what you see in Finder; `find`/`ls` show the real on-disk name.
+and `.zshrc` (a symlink into `.config`, already covered above). See the [FAQ](#faq) for why
+`Media.localized` looks different in Finder than on disk.
 
 ```bash
 ./os/macos/backup-to-t9.sh                          # back up every folder above
@@ -141,6 +137,44 @@ and `.zshrc` (a symlink into `.config`, already covered above).
 
 Safe to re-run — see the script's header comment for the full safety-guard rundown (destination
 must resolve inside the T9 root, refuses to mirror-delete over an unmounted/empty source, etc.).
+
+---
+
+## FAQ
+
+### Why does connecting the T9 make my Mac's Trash look non-empty?
+
+macOS gives every volume its own trash folder (`.Trashes/<uid>/` at the volume's root), and Finder's
+**unified Trash view merges all currently-mounted volumes' trashes together** — your internal disk's
+`~/.Trash` *and* `/Volumes/T9/.Trashes/501/`. So plugging in the T9 can make Finder's Trash suddenly
+show items you never put there from this Mac; they were deleted **while browsing the T9** at some
+point and are sitting in *its* trash, not yours.
+
+If "Empty Trash" then fails with something like:
+
+```
+The operation can't be completed because the item "<name>" is in use.
+```
+
+...it's usually not actually in use — `lsof` and locked-flag checks typically show nothing. It's more
+often Finder choking on something in the external volume's trash (e.g. a leftover extracted-zip cache
+folder). Fix it straight from Terminal, which bypasses whatever Finder is tripping over:
+
+```bash
+ls "/Volumes/T9/.Trashes/501/"                    # see what's actually in there
+rm -rf "/Volumes/T9/.Trashes/501/<name>" "/Volumes/T9/.Trashes/501/._<name>"   # delete just that item
+```
+
+Only touch items inside `.Trashes/`, and only the specific one causing trouble — never bulk-delete
+that folder or anything else on the drive. Then Finder → **Empty Trash** should succeed (or report
+0 items already, via `osascript -e 'tell application "Finder" to count items of trash'`).
+
+### Why does `Media.localized` show up as just "Media" in Finder?
+
+macOS translates the *displayed* name of any folder ending in `.localized` using translation strings
+hidden inside it — e.g. `Music/Music/Media.localized` shows up in Finder as just **"Media"**, with no
+`.localized` suffix visible anywhere in the UI. That's why it doesn't match what `backup-to-t9.sh`
+excludes by its real on-disk name; `find`/`ls` (not Finder) show the true name.
 
 ---
 
