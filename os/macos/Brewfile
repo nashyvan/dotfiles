@@ -58,5 +58,7 @@ cask "syntax-highlight"
 cask "the-unarchiver"
 cask "transmission"
 cask "vlc"
-cask "wezterm@nightly"
 cask "windscribe"
+# NOTE: wezterm@nightly is deliberately absent — the cask's install step breaks
+# whenever the nightly zip layout changes upstream. os/macos/install.sh fetches
+# the nightly straight from GitHub instead.

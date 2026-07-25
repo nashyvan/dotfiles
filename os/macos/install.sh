@@ -73,8 +73,7 @@ if brew trust --help >/dev/null 2>&1; then
 fi
 
 info "Installing Homebrew packages from Brewfile…"
-# Don't let one flaky formula/cask (e.g. the wezterm@nightly cask, which
-# periodically breaks upstream) abort the whole setup.
+# Don't let one flaky formula/cask abort the whole setup.
 if brew bundle --file="$CONFIG/os/macos/Brewfile"; then
   ok "Brew packages installed"
 else
@@ -82,6 +81,9 @@ else
 fi
 
 # 3a. Claude Code CLI — installed via its own installer, not brew ---------------
+# It lands in ~/.local/bin; put that on PATH for the rest of this script so the
+# installer doesn't warn about it. ~/.config/.zshrc adds it for future shells.
+export PATH="$HOME/.local/bin:$PATH"
 if ! command -v claude >/dev/null 2>&1; then
   info "Installing Claude Code CLI…"
   curl -fsSL https://claude.ai/install.sh | bash
@@ -89,10 +91,10 @@ else
   ok "Claude Code CLI present"
 fi
 
-# 3b. WezTerm fallback — the wezterm@nightly cask breaks intermittently upstream.
-# If the app isn't present, install the current nightly straight from GitHub.
+# 3b. WezTerm — the wezterm@nightly cask is not in the Brewfile because its
+# install step breaks upstream; fetch the current nightly straight from GitHub.
 if [[ ! -d /Applications/WezTerm.app ]]; then
-  info "WezTerm not installed by brew — fetching the nightly build directly…"
+  info "Fetching the WezTerm nightly build…"
   WT_TMP="$(mktemp -d)"
   WT_URL="https://github.com/wezterm/wezterm/releases/download/nightly/WezTerm-macos-nightly.zip"
   if curl -fL -o "$WT_TMP/wezterm.zip" "$WT_URL" && unzip -oq "$WT_TMP/wezterm.zip" -d "$WT_TMP"; then

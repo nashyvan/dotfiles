@@ -15,8 +15,13 @@ fi
 if [[ "$OS_TYPE" == "Linux" ]]; then
   NPM_PREFIX=$(npm prefix -g 2>/dev/null || true)
   [[ -n "$NPM_PREFIX" ]] && fpath+=("$NPM_PREFIX/lib/node_modules/pure-prompt/functions")
-  export PATH="$HOME/.local/bin:$PATH"
 fi
+
+# User-local binaries (Claude Code CLI installs itself to ~/.local/bin)
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ;;
+  *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
 
 # Initialize completion system
 autoload -Uz compinit && compinit
