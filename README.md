@@ -8,7 +8,7 @@ Supports **macOS** and **Debian/Ubuntu**.
 ```
 .config/
 ├── .zshrc                  # Zsh config (cross-platform, OS-aware)
-├── git/config              # Git identity and credential helper
+├── git/config              # Git identity (user.name/email); included into ~/.gitconfig by install.sh
 ├── nvim/                   # Neovim — git submodule (nashyvan/kickstart-modular.nvim)
 ├── tmux/                   # tmux config + themes
 ├── wezterm/                # WezTerm terminal config (macOS + Linux)

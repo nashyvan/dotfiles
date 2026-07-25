@@ -91,7 +91,18 @@ else
   ok "Claude Code CLI present"
 fi
 
-# 3b. GitHub auth — SSH key first, gh CLI as fallback --------------------------
+# 3b. Git identity — include the tracked git/config for user.name/email -------
+# Keeps identity in version control instead of an ad-hoc `git config --global`
+# call; machine-local bits (credential helpers, Azure DevOps, etc.) stay
+# untouched in ~/.gitconfig itself.
+GITCONFIG="$HOME/.gitconfig"
+if ! grep -qsF "$CONFIG/git/config" "$GITCONFIG" 2>/dev/null; then
+  info "Including ~/.config/git/config from ~/.gitconfig…"
+  git config --global include.path "$CONFIG/git/config"
+fi
+ok "Git identity: $(git config user.name) <$(git config user.email)>"
+
+# 3c. GitHub auth — SSH key first, gh CLI as fallback --------------------------
 # GitHub dropped username/password auth over HTTPS. Primary: load the personal
 # SSH key into the agent, backed by the macOS Keychain so it survives reboots
 # (the key itself comes from ~/.ssh via sync-to-new-mac.sh, not this repo).
@@ -115,7 +126,7 @@ if command -v gh >/dev/null 2>&1; then
   gh auth setup-git || warn "gh auth setup-git failed — run it manually later"
 fi
 
-# 3c. WezTerm — the wezterm@nightly cask is not in the Brewfile because its
+# 3d. WezTerm — the wezterm@nightly cask is not in the Brewfile because its
 # install step breaks upstream; fetch the current nightly straight from GitHub.
 if [[ ! -d /Applications/WezTerm.app ]]; then
   info "Fetching the WezTerm nightly build…"

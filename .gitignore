@@ -7,7 +7,9 @@ AGENTS.md
 /filezilla
 /gcloud
 /gh
-/git
+!/git/
+/git/*
+!/git/config
 /github-copilot
 /medusa
 /neofetch
